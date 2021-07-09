@@ -87,6 +87,7 @@ type Registry interface {
 	// WriteJSON writes a description of each registered lint as
 	// a JSON object, one object per line, to the provided writer.
 	WriteJSON(w io.Writer)
+	SetContext(ctx Conrg Context)
 }
 
 // registryImpl implements the Registry interface to provide a global collection
@@ -102,6 +103,7 @@ type registryImpl struct {
 	// lintsBySource is a map of all registered lints by source category. Lints
 	// are added to the lintsBySource map by RegisterLint.
 	lintsBySource map[LintSource][]*Lint
+	ctx           Context
 }
 
 var (
@@ -133,6 +135,11 @@ func (e errDuplicateName) Error() string {
 // An error is returned if the lint or lint's Lint pointer is nil, if the Lint
 // has an empty Name or if the Name was previously registered.
 func (r *registryImpl) register(l *Lint) error {
+	_, isLint := l.Lint.(LintWithCtx)
+	_, isLintWithCtx := l.Lint.(LintWithoutCtx)
+	if !(isLint || isLintWithCtx) {
+		return errors.New("yaaas")
+	}
 	if l == nil {
 		return errNilLint
 	}
@@ -144,6 +151,9 @@ func (r *registryImpl) register(l *Lint) error {
 	}
 	if existing := r.ByName(l.Name); existing != nil {
 		return &errDuplicateName{l.Name}
+	}
+	if err := r.ctx.Configure(l); err != nil {
+		return err
 	}
 	r.Lock()
 	defer r.Unlock()
@@ -232,6 +242,7 @@ func (r *registryImpl) Filter(opts FilterOptions) (Registry, error) {
 	}
 
 	filteredRegistry := NewRegistry()
+	filteredRegistry.SetContext(r.ctx)
 
 	sourceExcludes := sourceListToMap(opts.ExcludeSources)
 	sourceIncludes := sourceListToMap(opts.IncludeSources)
@@ -290,6 +301,10 @@ func (r *registryImpl) WriteJSON(w io.Writer) {
 	}
 }
 
+func (r *registryImpl) SetContext(ctx Context) {
+	r.ctx = ctx
+}
+
 // NewRegistry constructs a Registry implementation that can be used to register
 // lints.
 func NewRegistry() *registryImpl {
@@ -310,7 +325,7 @@ var globalRegistry *registryImpl = NewRegistry()
 // registration process.
 //
 // IMPORTANT: RegisterLint will panic if given a nil lint, or a lint with a nil
-// Lint pointer, or if the lint's Initialize function errors, or if the lint
+// Lint pointer, or if the lint's Initialize function errors, or if the lint`
 // name matches a previously registered lint's name. These conditions all
 // indicate a bug that should be addressed by a developer.
 func RegisterLint(l *Lint) {

@@ -47,6 +47,7 @@ var ( // flags
 	includeSources  string
 	excludeSources  string
 	printVersion    bool
+	context         string
 
 	// version is replaced by GoReleaser or `make` using an LDFlags option at
 	// build time. Here we supply a default value for folks that `go install` or
@@ -66,6 +67,7 @@ func init() {
 	flag.StringVar(&includeSources, "includeSources", "", "Comma-separated list of lint sources to include")
 	flag.StringVar(&excludeSources, "excludeSources", "", "Comma-separated list of lint sources to exclude")
 	flag.BoolVar(&printVersion, "version", false, "Print ZLint version and exit")
+	flag.StringVar(&context, "context", "", "@TODO")
 
 	flag.BoolVar(&prettyprint, "pretty", false, "Pretty-print JSON output")
 	flag.Usage = func() {
@@ -200,6 +202,11 @@ func trimmedList(raw string) []string {
 // includeNames, excludeNames, includeSources, and excludeSources flag values in
 // use.
 func setLints() (lint.Registry, error) {
+	ctx, err := lint.NewContextFromFile(context)
+	if err != nil {
+		return nil, err
+	}
+	lint.GlobalRegistry().SetContext(ctx)
 	// If there's no filter options set, use the global registry as-is
 	if nameFilter == "" && includeNames == "" && excludeNames == "" && includeSources == "" && excludeSources == "" {
 		return lint.GlobalRegistry(), nil

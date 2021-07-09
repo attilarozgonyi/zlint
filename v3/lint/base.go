@@ -34,6 +34,19 @@ type LintInterface interface {
 	Execute(c *x509.Certificate) *LintResult
 }
 
+type LintWithCtx interface {
+	Configurable
+	// CheckApplies runs once per certificate. It returns true if the Lint should
+	// run on the given certificate. If CheckApplies returns false, the Lint
+	// result is automatically set to NA without calling CheckEffective() or
+	// Run().
+	CheckAppliesWithCtx(c *x509.Certificate, ctx interface{}) bool
+
+	// Execute() is the body of the lint. It is called for every certificate for
+	// which CheckApplies() returns true.
+	ExecuteWithCtx(c *x509.Certificate, ctx interface{}) *LintResult
+}
+
 // A Lint struct represents a single lint, e.g.
 // "e_basic_constraints_not_critical". It contains an implementation of LintInterface.
 type Lint struct {
@@ -98,11 +111,33 @@ func (l *Lint) Execute(cert *x509.Certificate) *LintResult {
 		return &LintResult{Status: NA}
 	}
 	lint := l.Lint()
+	switch lint := lint.(type) {
+	case LintWithoutCtx:
+		return l.execute(lint, cert)
+	case LintWithCtx:
+		return l.executeWithCtx(lint, cert)
+	default:
+		panic("failed type assertion")
+	}
+}
+
+func (l *Lint) execute(lint LintWithoutCtx, cert *x509.Certificate) *LintResult {
 	if !lint.CheckApplies(cert) {
 		return &LintResult{Status: NA}
 	} else if !l.CheckEffective(cert) {
 		return &LintResult{Status: NE}
 	}
 	res := lint.Execute(cert)
+	return res
+}
+
+func (l *Lint) executeWithCtx(lint LintWithCtx, cert *x509.Certificate) *LintResult {
+	ctx := lint.Configure()
+	if !lint.CheckAppliesWithCtx(cert, ctx) {
+		return &LintResult{Status: NA}
+	} else if !l.CheckEffective(cert) {
+		return &LintResult{Status: NE}
+	}
+	res := lint.ExecuteWithCtx(cert, ctx)
 	return res
 }

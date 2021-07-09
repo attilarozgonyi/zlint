@@ -34,7 +34,15 @@ import (
 // lintName is not known or if the testCertFilename can not be loaded, or if the
 // lint result is nil.
 func TestLint(lintName string, testCertFilename string) *lint.LintResult {
-	return TestLintCert(lintName, ReadTestCert(testCertFilename))
+	return TestLintWithCtx(lintName, testCertFilename, "")
+}
+
+func TestLintWithCtx(lintName string, testCertFilename string, context string) *lint.LintResult {
+	ctx, err := lint.NewContextFromString(context)
+	if err != nil {
+		panic(err)
+	}
+	return TestLintCert(lintName, ReadTestCert(testCertFilename), ctx)
 }
 
 // TestLintCert executes a lint with the given name against an already parsed
@@ -43,7 +51,7 @@ func TestLint(lintName string, testCertFilename string) *lint.LintResult {
 //
 // Important: TestLintCert is only appropriate for unit tests. It will panic if
 // the lintName is not known or if the lint result is nil.
-func TestLintCert(lintName string, cert *x509.Certificate) *lint.LintResult {
+func TestLintCert(lintName string, cert *x509.Certificate, ctx lint.Context) *lint.LintResult {
 	l := lint.GlobalRegistry().ByName(lintName)
 	if l == nil {
 		panic(fmt.Sprintf(
@@ -51,7 +59,10 @@ func TestLintCert(lintName string, cert *x509.Certificate) *lint.LintResult {
 				"Did you forget to RegisterLint?\n",
 			lintName))
 	}
-
+	err := ctx.Configure(l)
+	if err != nil {
+		panic(err)
+	}
 	res := l.Execute(cert)
 	// We never expect a lint to return a nil LintResult
 	if res == nil {
