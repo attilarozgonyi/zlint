@@ -87,7 +87,8 @@ type Registry interface {
 	// WriteJSON writes a description of each registered lint as
 	// a JSON object, one object per line, to the provided writer.
 	WriteJSON(w io.Writer)
-	SetContext(ctx Conrg Context)
+	SetContext(ctx Context)
+	GetContext() Context
 }
 
 // registryImpl implements the Registry interface to provide a global collection
@@ -135,15 +136,10 @@ func (e errDuplicateName) Error() string {
 // An error is returned if the lint or lint's Lint pointer is nil, if the Lint
 // has an empty Name or if the Name was previously registered.
 func (r *registryImpl) register(l *Lint) error {
-	_, isLint := l.Lint.(LintWithCtx)
-	_, isLintWithCtx := l.Lint.(LintWithoutCtx)
-	if !(isLint || isLintWithCtx) {
-		return errors.New("yaaas")
-	}
 	if l == nil {
 		return errNilLint
 	}
-	if l.Lint == nil {
+	if l.Lint() == nil {
 		return errNilLintPtr
 	}
 	if l.Name == "" {
@@ -151,9 +147,6 @@ func (r *registryImpl) register(l *Lint) error {
 	}
 	if existing := r.ByName(l.Name); existing != nil {
 		return &errDuplicateName{l.Name}
-	}
-	if err := r.ctx.Configure(l); err != nil {
-		return err
 	}
 	r.Lock()
 	defer r.Unlock()
@@ -303,6 +296,10 @@ func (r *registryImpl) WriteJSON(w io.Writer) {
 
 func (r *registryImpl) SetContext(ctx Context) {
 	r.ctx = ctx
+}
+
+func (r *registryImpl) GetContext() Context {
+	return r.ctx
 }
 
 // NewRegistry constructs a Registry implementation that can be used to register

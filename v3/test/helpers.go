@@ -59,11 +59,7 @@ func TestLintCert(lintName string, cert *x509.Certificate, ctx lint.Context) *li
 				"Did you forget to RegisterLint?\n",
 			lintName))
 	}
-	err := ctx.Configure(l)
-	if err != nil {
-		panic(err)
-	}
-	res := l.Execute(cert)
+	res := l.Execute(cert, ctx)
 	// We never expect a lint to return a nil LintResult
 	if res == nil {
 		panic(fmt.Sprintf(
