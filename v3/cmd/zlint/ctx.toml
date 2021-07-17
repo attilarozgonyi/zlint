@@ -1,0 +1,5 @@
+[e_ca_too_few_beers]
+BottlesOfBeerOnTheWall = 9
+
+[e_some_other_lint]
+is_web_cert = false

@@ -15,46 +15,46 @@ package cabf_br
  */
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/zmap/zcrypto/x509"
 	"github.com/zmap/zlint/v3/lint"
 	"github.com/zmap/zlint/v3/util"
 )
 
-type caCommonNameMissing2 struct {
-	BeerHall string
+type MyLint struct {
+	BottlesOfBeerOnTheWall int
 }
 
 func init() {
 	lint.RegisterLint(&lint.Lint{
-		Name:          "e_ca_common_name_missing2",
-		Description:   "CA Certificates common name MUST be included.",
+		Name:          "e_ca_too_few_beers",
+		Description:   "CA Certificates MUST have at least 99 beers.",
 		Citation:      "BRs: 7.1.4.3.1",
 		Source:        lint.CABFBaselineRequirements,
-		EffectiveDate: time.Time{},
-		Lint:          NewCaCommonNameMissing2,
+		EffectiveDate: util.CABV148Date,
+		Lint:          NewMyLint,
 	})
 }
 
-func (l *caCommonNameMissing2) Configure() interface{} {
+// This is the new thing. You give us a struct to deserialize
+// into and we will get the appropriate context into it.
+//
+// In this case, the lint itself holds the data in quesiton.
+func (l *MyLint) Configure() interface{} {
 	return l
 }
 
-func NewCaCommonNameMissing2() lint.LintInterface {
-	return &caCommonNameMissing2{}
+func NewMyLint() lint.LintInterface {
+	return &MyLint{}
 }
 
-func (l *caCommonNameMissing2) CheckApplies(c *x509.Certificate) bool {
+func (l *MyLint) CheckApplies(c *x509.Certificate) bool {
 	return util.IsCACert(c)
 }
 
-func (l *caCommonNameMissing2) Execute(c *x509.Certificate) *lint.LintResult {
-	fmt.Printf("BeerHall name is: '%s'\n", l.BeerHall)
-	if c.Subject.CommonName == "" {
-		return &lint.LintResult{Status: lint.Error, Details: l.BeerHall}
+func (l *MyLint) Execute(c *x509.Certificate) *lint.LintResult {
+	if l.BottlesOfBeerOnTheWall < 99 {
+		return &lint.LintResult{Status: lint.Error, Details: "Time for a beer run!"}
 	} else {
-		return &lint.LintResult{Status: lint.Pass, Details: l.BeerHall}
+		return &lint.LintResult{Status: lint.Pass}
 	}
 }

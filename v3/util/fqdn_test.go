@@ -15,8 +15,31 @@
 package util
 
 import (
+	"encoding/base64"
 	"testing"
+
+	"github.com/zmap/zcrypto/x509"
 )
+
+func TestThing(t *testing.T) {
+	cb, _ := base64.StdEncoding.DecodeString("MIIBDjCBtqADAgECAgEBMAoGCCqGSM49BAMCMAAwHhcNMjEwNzE2MTY1ODU4WhcN\nMjEwNzE2MTY1ODU4WjAAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAExKslLogf\n7o13SNM+O81UlsOMqySsK12NzoL+zHbaX+EUMsjx1HR/MEgV4yxh2C8X0AEPguqA\noc88w5YpjHF9j6MhMB8wHQYDVR0OBBYEFKYWaqW0wU5zt41kR78UOuY32Tv3MAoG\nCCqGSM49BAMCA0cAMEQCIH9Wx9FjEV6YeNe1/R8daXrhypivvUUijMyEEW8lo8pV\nAiAjEGOh1T0MujFZYq/WJ8FNsGG0mwL7MHVgnUKHamKclg==")
+	b, _ := base64.StdEncoding.DecodeString("MIIBEDCBtqADAgECAgECMAoGCCqGSM49BAMCMAAwHhcNMjEwNzE2MTY1ODU4WhcN\nMjEwNzE2MTY1ODU4WjAAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEc8kgB8tR\nG/TtH67os1DotzU7LnxEoHzhSm54R1MHzh4Ak91o5ewT5ZK8dFyy+CT/JAe7cUlN\neNIw4MBW/QsZwKMhMB8wHQYDVR0OBBYEFOnhtl6bWllO3bxabBQ0z2yXqecgMAoG\nCCqGSM49BAMCA0kAMEYCIQC7t8MgJAiwyIXl5Oy6rOiXG3E/l7Tabpx0d4oysSue\nMAIhAI8eVQRqfQD+rkWsNex+/6s3UCcTdejyQzqDP04vRYFs")
+	i, err := x509.ParseCertificate(b)
+	c, err := x509.ParseCertificate(cb)
+	if err != nil {
+		panic(err)
+	}
+	t.Log(c.SPKIFingerprint)
+	t.Log(i.SPKIFingerprint)
+	pool := x509.NewCertPool()
+	pool.AddCert(c)
+	_, _, _, err = i.Verify(x509.VerifyOptions{
+		Roots: pool,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestIsFQDNCorrectFQDN(t *testing.T) {
 	domain := "google.com"
