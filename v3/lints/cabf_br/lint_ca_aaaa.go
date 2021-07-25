@@ -20,8 +20,12 @@ import (
 	"github.com/zmap/zlint/v3/util"
 )
 
-type MyLint struct {
-	BottlesOfBeerOnTheWall int
+type LintItselfIsConfigurable struct {
+	BottlesOfBeerOnTheWall int `comment:"This MUST be set to the number of bottles of beer that were on the signing CAs wall at the time of issuance."`
+	ISpyWithMyLittleEye    struct {
+		Descriptions []string `comment:"Any number of descriptions that are valid for the subject."`
+		Subject      string
+	} `toml:"i_spy_with_my_little_eye"`
 }
 
 func init() {
@@ -31,29 +35,33 @@ func init() {
 		Citation:      "BRs: 7.1.4.3.1",
 		Source:        lint.CABFBaselineRequirements,
 		EffectiveDate: util.CABV148Date,
-		Lint:          NewMyLint,
+		Lint:          NewLintItselfIsConfigurable,
 	})
 }
 
-// This is the new thing. You give us a struct to deserialize
-// into and we will get the appropriate context into it.
-//
-// In this case, the lint itself holds the data in quesiton.
-func (l *MyLint) Configure() interface{} {
+func NewLintItselfIsConfigurable() lint.LintInterface {
+	// Go code encourages that the zero value for a struct be valid, however
+	// if you wish for your Lint to have non-zero defaults then your constructor is
+	// the place to do so. The value initialized in this constructor WILL appear
+	// in the example configuration printed through the `-exampleConfig flag`.
+	return &LintItselfIsConfigurable{ISpyWithMyLittleEye: struct {
+		Descriptions []string `comment:"Any number of descriptions that are valid for the subject."`
+		Subject      string
+	}{Descriptions: []string{"larger than a bread box", "smaller than a barn"}, Subject: "A car"}}
+}
+
+// In this case, the struct that is the lint itself is the target for configuration.
+func (l *LintItselfIsConfigurable) Configure() interface{} {
 	return l
 }
 
-func NewMyLint() lint.LintInterface {
-	return &MyLint{}
-}
-
-func (l *MyLint) CheckApplies(c *x509.Certificate) bool {
+func (l *LintItselfIsConfigurable) CheckApplies(c *x509.Certificate) bool {
 	return util.IsCACert(c)
 }
 
-func (l *MyLint) Execute(c *x509.Certificate) *lint.LintResult {
+func (l *LintItselfIsConfigurable) Execute(c *x509.Certificate) *lint.LintResult {
 	if l.BottlesOfBeerOnTheWall < 99 {
-		return &lint.LintResult{Status: lint.Error, Details: "Time for a beer run!"}
+		return &lint.LintResult{Status: lint.Error}
 	} else {
 		return &lint.LintResult{Status: lint.Pass}
 	}

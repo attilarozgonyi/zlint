@@ -48,6 +48,7 @@ var ( // flags
 	excludeSources  string
 	printVersion    bool
 	context         string
+	exampleContext  bool
 
 	// version is replaced by GoReleaser or `make` using an LDFlags option at
 	// build time. Here we supply a default value for folks that `go install` or
@@ -68,6 +69,7 @@ func init() {
 	flag.StringVar(&excludeSources, "excludeSources", "", "Comma-separated list of lint sources to exclude")
 	flag.BoolVar(&printVersion, "version", false, "Print ZLint version and exit")
 	flag.StringVar(&context, "context", "", "@TODO")
+	flag.BoolVar(&exampleContext, "exampleContext", false, "@TODO")
 
 	flag.BoolVar(&prettyprint, "pretty", false, "Pretty-print JSON output")
 	flag.Usage = func() {
@@ -94,6 +96,16 @@ func main() {
 
 	if listLintsJSON {
 		registry.WriteJSON(os.Stdout)
+		return
+	}
+
+	if exampleContext {
+		b, err := registry.Configurables()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s\n", string(b))
 		return
 	}
 

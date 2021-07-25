@@ -19,10 +19,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"regexp"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/pelletier/go-toml"
 )
 
 // FilterOptions is a struct used by Registry.Filter to create a sub registry
@@ -75,6 +78,8 @@ type Registry interface {
 	// Sources returns a SourceList of registered LintSources. The list is not
 	// sorted but can be sorted by the caller with sort.Sort() if required.
 	Sources() SourceList
+	// @TODO
+	Configurables() ([]byte, error)
 	// ByName returns a pointer to the registered lint with the given name, or nil
 	// if there is no such lint registered in the registry.
 	ByName(name string) *Lint
@@ -300,6 +305,30 @@ func (r *registryImpl) SetContext(ctx Context) {
 
 func (r *registryImpl) GetContext() Context {
 	return r.ctx
+}
+
+func (r *registryImpl) Configurables() ([]byte, error) {
+	configurables := make(map[string]interface{}, 0)
+	for name, lint := range r.lintsByName {
+		switch configurable := lint.Lint().(type) {
+		case Configurable:
+			configurables[name] = configurable.Configure()
+		default:
+		}
+	}
+	rr, w := io.Pipe()
+	var err error
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer w.Close()
+		err = toml.NewEncoder(w).Indentation("").CompactComments(true).Encode(configurables)
+	}()
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadAll(rr)
 }
 
 // NewRegistry constructs a Registry implementation that can be used to register
