@@ -1,9 +1,12 @@
-# Purpose
+I want to get this proposal in front of the crew close to ZLint and the ZMap org in general. The plan is to revise this text and eventually submit it to the CA community via the mailing list.
 
-lol
+# Purpose [WIP]
 
+The information provided to ZLint today is the information present within the target certificate itself. However, policies often contain requirements based on information that are not encoded in any x509 certificate. When attempting to encode this policy within ZLint, the lint in question becomes non-deterministic as non enough information is known to give a definitive answer.
 
-asd
+@TODO explaining problems are harder than writing the code that fixes it.
+
+@TODO compile list of open issues/PRs that are blocked on this
 
 # Example Lints
 

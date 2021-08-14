@@ -26,6 +26,7 @@ type LintItselfIsConfigurable struct {
 		Descriptions []string `comment:"Any number of descriptions that are valid for the subject."`
 		Subject      string
 	} `toml:"i_spy_with_my_little_eye"`
+	cosigner string
 }
 
 func init() {
