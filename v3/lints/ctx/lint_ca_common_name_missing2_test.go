@@ -47,7 +47,7 @@ func TestCaCommonNameNotMissing2(t *testing.T) {
 	inputPath := "caCommonNameNotMissing.pem"
 	expected := lint.Pass
 	ctx := `
-[e_ca_common_name_missing]
+[e_ca_common_name_missing2]
 BeerHall = "liedershousen"
 `
 	out := test.TestLintWithCtx("e_ca_common_name_missing2", inputPath, ctx)
@@ -63,7 +63,7 @@ func TestCaCommonNameNotMissing3(t *testing.T) {
 	inputPath := "caCommonNameNotMissing.pem"
 	expected := lint.Pass
 	ctx := `
-[e_ca_common_name_missing]
+[e_ca_common_name_missing2]
 BeerHall = "liedershousenssss"
 `
 	out := test.TestLintWithCtx("e_ca_common_name_missing2", inputPath, ctx)
@@ -85,12 +85,12 @@ func TestConcurrency(t *testing.T) {
 			defer wg.Done()
 			num := strconv.Itoa(rand.Intn(9999))
 			ctx := fmt.Sprintf(`
-[e_ca_common_name_missing]
+[e_ca_common_name_missing2]
 BeerHall = "%s"
 `, num)
 			out := test.TestLintWithCtx("e_ca_common_name_missing2", inputPath, ctx)
 			if out.Details != num {
-				t.Errorf("wanted %s got %s", num, num+"1")
+				t.Errorf("wanted %s got %s", num, out.Details)
 			}
 			if out.Status != expected {
 				t.Errorf("%s: expected %s, got %s", inputPath, expected, out.Status)
@@ -98,4 +98,23 @@ BeerHall = "%s"
 		}()
 	}
 	wg.Wait()
+}
+
+func TestCaCommonNameNotMissing4(t *testing.T) {
+	inputPath := "caCommonNameNotMissing.pem"
+	expected := lint.Pass
+	ctx := `
+[CABF_BR]
+DoesItWork = "yes, yes it does"
+
+[e_ca_common_name_missing2]
+BeerHall = "liedershousenssss"
+`
+	out := test.TestLintWithCtx("e_ca_common_name_missing2", inputPath, ctx)
+	if out.Status != expected {
+		t.Errorf("%s: expected %s, got %s", inputPath, expected, out.Status)
+	}
+	if out.Details != "liedershousenssss" {
+		panic("noooooooooooo")
+	}
 }

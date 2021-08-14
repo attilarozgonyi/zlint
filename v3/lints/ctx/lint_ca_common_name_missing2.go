@@ -24,6 +24,7 @@ import (
 
 type caCommonNameMissing struct {
 	BeerHall string
+	Working  *lint.CABFBaselineRequirementsContext
 }
 
 func init() {
@@ -50,7 +51,7 @@ func (l *caCommonNameMissing) CheckApplies(c *x509.Certificate) bool {
 }
 
 func (l *caCommonNameMissing) Execute(c *x509.Certificate) *lint.LintResult {
-	fmt.Printf("BeerHall name is: '%s'\n", l.BeerHall)
+	fmt.Println(l.Working)
 	if c.Subject.CommonName == "" {
 		return &lint.LintResult{Status: lint.Error, Details: l.BeerHall}
 	} else {
