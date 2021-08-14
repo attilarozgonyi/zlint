@@ -253,3 +253,91 @@ BeerHall = "liedershousenssss"
 		t.Fatal("scream")
 	}
 }
+
+func TestGlobal(t *testing.T) {
+	ctx := `
+YarHar = "This is the bomb"
+[e_ca_common_name_missing2]
+BeerHall = "liedershousenssss"
+`
+	type caCommonNameMissing struct {
+		BeerHall string
+		Inner    struct {
+			Working *Global
+		}
+	}
+	a := &caCommonNameMissing{}
+	c, err := NewContextFromString(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = c.Configure(a, "e_ca_common_name_missing2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Inner.Working.YarHar != "This is the bomb" {
+		t.Fatal(a.Inner.Working.YarHar)
+	}
+}
+
+func TestMixed(t *testing.T) {
+	ctx := `
+YarHar = "This is the bomb"
+[e_ca_common_name_missing2]
+BeerHall = "liedershousenssss"
+
+[CABF_BR]
+DoesItWork = "yes, yes it does"
+`
+	type caCommonNameMissing struct {
+		BeerHall string
+		Inner    struct {
+			Working *Global
+		}
+		Berp CABFBaselineRequirementsContext
+	}
+	a := &caCommonNameMissing{}
+	c, err := NewContextFromString(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = c.Configure(a, "e_ca_common_name_missing2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Inner.Working.YarHar != "This is the bomb" {
+		t.Fatal(a.Inner.Working.YarHar)
+	}
+	if a.Berp.DoesItWork != "yes, yes it does" {
+		t.Fatal(a.Berp.DoesItWork)
+	}
+}
+
+func TestIsCopy(t *testing.T) {
+	ctx := `
+YarHar = "This is the bomb"
+[e_ca_common_name_missing2]
+BeerHall = "liedershousenssss"
+
+[CABF_BR]
+DoesItWork = "yes, yes it does"
+`
+	type caCommonNameMissing struct {
+		BeerHall string
+		Berp     *CABFBaselineRequirementsContext
+	}
+	a := &caCommonNameMissing{}
+	c, err := NewContextFromString(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = c.Configure(a, "e_ca_common_name_missing2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Berp.DoesItWork != "yes, yes it does" {
+		t.Fatal(a.Berp.DoesItWork)
+	}
+	a.Berp.DoesItWork = "something else"
+	t.Log(c.tree.Get("CABF_BR"))
+}

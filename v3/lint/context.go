@@ -64,6 +64,21 @@ func (c Context) findAll(i interface{}) error {
 		}
 		var val reflect.Value
 		switch t := field.Interface().(type) {
+		case Global:
+			err := c.deser(&t, "")
+			if err != nil {
+				return err
+			}
+			val = reflect.ValueOf(t)
+		case *Global:
+			if t == nil {
+				t = &Global{}
+			}
+			err := c.deser(t, "")
+			if err != nil {
+				return err
+			}
+			val = reflect.ValueOf(t)
 		case RFC5280Context:
 			err := c.deser(&t, string(RFC5280))
 			if err != nil {
@@ -228,6 +243,9 @@ func (c Context) deser(i interface{}, namespace string) error {
 	return target.(*toml.Tree).Unmarshal(i)
 }
 
+type Global struct {
+	YarHar string
+}
 type RFC5280Context struct{}
 type RFC5480Context struct{}
 type RFC5891Context struct{}
