@@ -257,3 +257,47 @@ type MozillaRootStorePolicyContext struct{}
 type AppleRootStorePolicyContext struct{}
 type CommunityContext struct{}
 type EtsiEsiContext struct{}
+
+func stripAll(i interface{}, namespace string) map[string]interface{} {
+	return map[string]interface{}{namespace: _stripAll(i)}
+}
+
+func _stripAll(i interface{}) interface{} {
+	value := reflect.Indirect(reflect.ValueOf(i))
+	if value.Kind() != reflect.Struct {
+		return i
+	}
+	m := make(map[string]interface{})
+	for field := 0; field < value.NumField(); field++ {
+		name := value.Type().Field(field).Name
+		field := value.Field(field)
+		if !field.CanInterface() {
+			continue
+		}
+		switch t := field.Interface().(type) {
+		case Global:
+		case *Global:
+		case RFC5280Context:
+		case *RFC5280Context:
+		case RFC5480Context:
+		case *RFC5480Context:
+		case RFC5891Context:
+		case *RFC5891Context:
+		case CABFBaselineRequirementsContext:
+		case *CABFBaselineRequirementsContext:
+		case CABFEVGuidelinesContext:
+		case *CABFEVGuidelinesContext:
+		case MozillaRootStorePolicyContext:
+		case *MozillaRootStorePolicyContext:
+		case AppleRootStorePolicyContext:
+		case *AppleRootStorePolicyContext:
+		case CommunityContext:
+		case *CommunityContext:
+		case EtsiEsiContext:
+		case *EtsiEsiContext:
+		default:
+			m[name] = _stripAll(t)
+		}
+	}
+	return m
+}

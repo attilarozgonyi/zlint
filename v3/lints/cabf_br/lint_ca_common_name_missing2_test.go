@@ -37,7 +37,7 @@ func TestCaCommonNameMissing2(t *testing.T) {
 func TestCaCommonNameNotMissing2(t *testing.T) {
 	inputPath := "caCommonNameNotMissing.pem"
 	expected := lint.Pass
-	out := test.TestLint("e_ca_common_name_missing2", inputPath)
+	out := test.TestLint("e_ca_common_name_missing", inputPath)
 	if out.Status != expected {
 		t.Errorf("%s: expected %s, got %s", inputPath, expected, out.Status)
 	}

@@ -2,8 +2,13 @@ package lint
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"reflect"
+	"sync"
 	"testing"
+
+	"github.com/pelletier/go-toml"
 )
 
 type Wat struct {
@@ -323,8 +328,11 @@ BeerHall = "liedershousenssss"
 DoesItWork = "yes, yes it does"
 `
 	type caCommonNameMissing struct {
-		BeerHall string
-		Berp     *CABFBaselineRequirementsContext
+		BeerHall  string
+		Winning   bool
+		Berp      *CABFBaselineRequirementsContext
+		Unrelated struct{ Inner string }
+		whatever  struct{ something int }
 	}
 	a := &caCommonNameMissing{}
 	c, err := NewContextFromString(ctx)
@@ -340,4 +348,54 @@ DoesItWork = "yes, yes it does"
 	}
 	a.Berp.DoesItWork = "something else"
 	t.Log(c.tree.Get("CABF_BR"))
+	t.Log(a)
+}
+
+func TestWrapper(t *testing.T) {
+	ctx := `
+[CABF_BR]
+DoesItWork = "yes, yes it does"
+`
+	type caCommonNameMissing struct {
+		Berp *CABFBaselineRequirementsContext
+	}
+	a := &caCommonNameMissing{}
+	c, err := NewContextFromString(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = c.Configure(a, "e_ca_common_name_missing2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Berp.DoesItWork != "yes, yes it does" {
+		t.Fatal(a.Berp.DoesItWork)
+	}
+	a.Berp.DoesItWork = "something else"
+	t.Log(c.tree.Get("CABF_BR"))
+	t.Log(a)
+}
+
+func TestWhatever(t *testing.T) {
+	type SubThing struct {
+		Global Global
+		Number int `comment:"Any number of descriptions that are valid for the subject."`
+		other  string
+	}
+	type Thing struct{ SubThing SubThing }
+	configurables := stripAll(&Thing{}, "e_soemthing_litning")
+	rr, w := io.Pipe()
+	var err error
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer w.Close()
+		err = toml.NewEncoder(w).Indentation("").CompactComments(true).Encode(configurables)
+	}()
+	if err != nil {
+		t.Fatal(err)
+	}
+	output, _ := ioutil.ReadAll(rr)
+	t.Log(string(output))
 }

@@ -312,10 +312,23 @@ func (r *registryImpl) Configurables() ([]byte, error) {
 	for name, lint := range r.lintsByName {
 		switch configurable := lint.Lint().(type) {
 		case Configurable:
-			configurables[name] = configurable.Configure()
+			configurables[name] = _stripAll(configurable.Configure())
 		default:
 		}
 	}
+	for k, v := range _stripAll(&Global{}).(map[string]interface{}) {
+		configurables[k] = v
+	}
+	configurables[string(CABFBaselineRequirements)] = &CABFBaselineRequirementsContext{}
+	configurables[string(RFC5280)] = &RFC5280Context{}
+	configurables[string(RFC5480)] = &RFC5480Context{}
+	configurables[string(RFC5891)] = &RFC5891Context{}
+	configurables[string(CABFBaselineRequirements)] = &CABFBaselineRequirementsContext{}
+	configurables[string(CABFEVGuidelines)] = &CABFEVGuidelinesContext{}
+	configurables[string(MozillaRootStorePolicy)] = &MozillaRootStorePolicyContext{}
+	configurables[string(AppleRootStorePolicy)] = &AppleRootStorePolicyContext{}
+	configurables[string(Community)] = &CommunityContext{}
+	configurables[string(EtsiEsi)] = &EtsiEsiContext{}
 	rr, w := io.Pipe()
 	var err error
 	wg := sync.WaitGroup{}

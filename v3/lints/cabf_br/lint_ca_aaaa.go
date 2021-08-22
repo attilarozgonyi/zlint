@@ -27,6 +27,7 @@ type LintItselfIsConfigurable struct {
 		Subject      string
 	} `toml:"i_spy_with_my_little_eye"`
 	cosigner string
+	Global   lint.Global
 }
 
 func init() {
